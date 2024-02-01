@@ -10,6 +10,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
@@ -109,8 +110,12 @@ class Ui_Dialog(object):
         urls += self.getgoogle_atag(self.google_query[0])
         urls += self.getbing_atag(self.bing_query[0])
         urls += self.getbing_atag(self.bing_query[1])
+        self.data = []
         for url in urls:
             self.get_anchor_text(url)
+        columns = ['COMPANY', 'ADDRESS', 'PHONE', 'url']
+        df = pd.DataFrame(self.data, columns=columns)
+        df.to_markdown(path_or_buf='Data.mark', index=False)
 
     def getgoogle_query(self):
         res = 'https://www.google.com/search?q=' + self.googlekey
@@ -160,10 +165,10 @@ class Ui_Dialog(object):
             return href_values
         except TimeoutException:
             print("Timed out waiting for Google to load")
-            return None
+            return []
         except Exception as e:
             print("An error occurred:", e)
-            return None
+            return []
         finally:
             driver.quit()
     
@@ -186,16 +191,14 @@ class Ui_Dialog(object):
             return href_values
         except TimeoutException:
             print("Timed out waiting for Bing to load")
-            return None
+            return []
         except Exception as e:
             print("An error occurred:", e)
-            return None
+            return []
         finally:
             driver.quit()
     
     def get_anchor_text(self, url):
-        print('----------------------------')
-        print(url)
         try:
             response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, verify=False)
             response.raise_for_status()
@@ -204,13 +207,22 @@ class Ui_Dialog(object):
                 footer_tag = soup.find('footer')
                 if footer_tag:
                     footer_text = footer_tag.get_text()
+                    COMPANY = None
+                    ADDRESS = None
+                    PHONE = None
                     for line in footer_text.split('\n'):
-                        if any(keyword in line for keyword in ['会社', '〒', 'TEL']):
-                            text = self.remove_tabs(line.strip())
-                            print(text)
+                        if '会社' in line:
+                            COMPANY = line
+                        elif '〒' in line:
+                            ADDRESS = line
+                        elif 'TEL' in line:
+                            PHONE = line
+                        # if any(keyword in line for keyword in ['会社', '〒', 'TEL']):
+                        #     text = self.remove_tabs(line.strip())
+                        #     print(text)
+                    self.data.append([COMPANY, ADDRESS, PHONE, url])
                 else:
                     return None
-                print('----------------------------')
             else:
                 return None
 
