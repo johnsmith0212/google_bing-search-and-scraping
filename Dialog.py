@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+import re
+import sys
 from bs4 import BeautifulSoup
 from PyQt6 import QtCore, QtGui, QtWidgets
 import requests
@@ -115,7 +118,7 @@ class Ui_Dialog(object):
             self.get_anchor_text(url)
         columns = ['COMPANY', 'ADDRESS', 'PHONE', 'url']
         df = pd.DataFrame(self.data, columns=columns)
-        df.to_markdown(path_or_buf='Data.mark', index=False)
+        df.to_excel('output.xlsx', index=False)
 
     def getgoogle_query(self):
         res = 'https://www.google.com/search?q=' + self.googlekey
@@ -207,19 +210,18 @@ class Ui_Dialog(object):
                 footer_tag = soup.find('footer')
                 if footer_tag:
                     footer_text = footer_tag.get_text()
-                    COMPANY = None
-                    ADDRESS = None
-                    PHONE = None
+                    COMPANY = ''
+                    ADDRESS = ''
+                    PHONE = ''
                     for line in footer_text.split('\n'):
-                        if '会社' in line:
+                        if 'å' in line:
+                           line = line.encode('latin1', errors='ignore').decode('utf-8', errors='ignore')
+                        if '会社' in line and '会社概要' not in line:
                             COMPANY = line
-                        elif '〒' in line:
-                            ADDRESS = line
-                        elif 'TEL' in line:
-                            PHONE = line
-                        # if any(keyword in line for keyword in ['会社', '〒', 'TEL']):
-                        #     text = self.remove_tabs(line.strip())
-                        #     print(text)
+                        if '〒' in line or '市' in line or '県' in line:
+                            ADDRESS += line
+                        if 'TEL' in line or re.match(r"\d{3}-\d{3}-\d{4}", line):
+                            PHONE += line
                     self.data.append([COMPANY, ADDRESS, PHONE, url])
                 else:
                     return None
@@ -233,10 +235,9 @@ class Ui_Dialog(object):
         return text.replace('\t', '').strip()
 
     def cancelbutton_click(self):
-        sys.exit(app.exec())
-        
+        QtWidgets.QApplication.quit()
+
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     Dialog = QtWidgets.QDialog()
     ui = Ui_Dialog()

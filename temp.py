@@ -1,41 +1,33 @@
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from bs4 import BeautifulSoup
+# initial_text = "ã791-8032æåªçæ¾å±±å¸åæé¢çº704TELï¼089-974-8008FAXï¼089-974-8002愛媛県松山市南斎院町"
+# decoded_text = initial_text.encode('latin1', errors='ignore').decode('utf-8', errors='ignore')
 
-def scrape_search_results(search_query, search_engine):
-    if search_engine.lower() == "google":
-        driver = webdriver.Chrome()
-        search_url = f"https://www.google.com/search?q={search_query}&tbs=qdr:w"
-    elif search_engine.lower() == "bing":
-        driver = webdriver.Chrome()
-        search_url = f"https://www.bing.com/search?q={search_query}&t1=w"
-    else:
-        print("Unsupported search engine. Supported options are 'google' and 'bing'.")
-        return
+# print(decoded_text)
 
-    driver.get(search_url)
 
-    try:
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "search"))
-        )
+# import re
 
-        soup = BeautifulSoup(driver.page_source, 'html.parser')
-        a_tags = soup.find_all('a', {'jsname': 'UWckNb'})
-        href_values = [a.get('href') for a in a_tags]
-        return href_values
-    except Exception as e:
-        print("An error occurred:", e)
-    finally:
-        driver.quit()
+# pattern = r".*会社$"
+# pattern = r"\d{3}-\d{3}-\d{4}"
+# text = "899プロコンセ株式会社"
+# match = re.match(pattern, text)
 
-# Example usage
-search_query = "適切に保護することを社会的責務と考え 下記の方針に基づき その保護を徹底してまいります"
-google_results = scrape_search_results(search_query, "google")
-# bing_results = scrape_search_results(search_query, "bing")
+# if match:
+#     print("マッチしました！")
+# else:
+#     print("マッチしませんでした。")
 
-print("Google results:", google_results)
-# print("Bing results:", bing_results)
+import re
+
+def remove_non_japanese(text):
+    # 日本語以外の文字を削除
+    japanese_text = re.sub(r'[^\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF\s]', '', text)
+    
+    return japanese_text
+
+# テスト用文字列
+text = "Hello こんに ちは 123 ａｂｃ！＠＃"
+
+# 日本語のみを残す
+japanese_text = remove_non_japanese(text)
+
+print(japanese_text)
